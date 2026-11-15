@@ -43,7 +43,32 @@
                         {{-- Menu do Administrador --}}
                         <li>
                             <a href="{{ route('admin.home') }}" class="nav-link {{ request()->routeIs('admin.home') ? 'active' : '' }}">
-                                <i class="fa-solid fa-gauge-high"></i> Painel Admin
+                                <i class="fa-solid fa-gauge-high"></i> Painel
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.usuarios') }}" class="nav-link {{ request()->routeIs('admin.usuarios*') ? 'active' : '' }}">
+                                <i class="fa-solid fa-users"></i> Usuários
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.topicos') }}" class="nav-link {{ request()->routeIs('admin.topicos*') ? 'active' : '' }}">
+                                <i class="fa-solid fa-book-bookmark"></i> Tópicos
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.conteudos') }}" class="nav-link {{ request()->routeIs('admin.conteudos*') ? 'active' : '' }}">
+                                <i class="fa-solid fa-file-lines"></i> Conteúdos
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.quizzes') }}" class="nav-link {{ request()->routeIs('admin.quizzes*') ? 'active' : '' }}">
+                                <i class="fa-solid fa-circle-question"></i> Quizzes
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.relatorios') }}" class="nav-link {{ request()->routeIs('admin.relatorios') ? 'active' : '' }}">
+                                <i class="fa-solid fa-chart-pie"></i> Relatórios
                             </a>
                         </li>
                     @else
@@ -51,6 +76,11 @@
                         <li>
                             <a href="{{ route('home') }}" class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}">
                                 <i class="fa-solid fa-house"></i> Início
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('topicos') }}" class="nav-link {{ request()->routeIs('topicos') ? 'active' : '' }}">
+                                <i class="fa-solid fa-book-open"></i> Tópicos
                             </a>
                         </li>
                         <li>

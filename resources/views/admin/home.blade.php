@@ -32,14 +32,14 @@
         </div>
     </div>
 
-    {{-- Card 2: Quizzes --}}
+    {{-- Card 2: Quizzes disponíveis --}}
     <div class="card stat-card">
         <div class="stat-icon" style="background-color:var(--success-light); color:var(--success);">
-            <i class="fa-solid fa-clipboard-check"></i>
+            <i class="fa-solid fa-circle-question"></i>
         </div>
         <div class="stat-info">
-            <span class="stat-value">{{ $totalQuizzes }}</span>
-            <span class="stat-label">Quizzes realizados</span>
+            <span class="stat-value">{{ $totalQuizzesDisponiveis }}</span>
+            <span class="stat-label">Quizzes disponíveis</span>
         </div>
     </div>
 
@@ -98,38 +98,31 @@
         @endif
     </div>
 
-    {{-- Card de resumo rápido --}}
-    <div class="card" style="display:flex; flex-direction:column; gap:1.2rem;">
+    {{-- Acesso rápido aos módulos --}}
+    <div class="card" style="display:flex; flex-direction:column; gap:0.8rem;">
         <h4 style="font-weight:600; display:flex; align-items:center; gap:0.5rem;">
-            <i class="fa-solid fa-circle-info" style="color:#a855f7;"></i> Resumo do Sistema
+            <i class="fa-solid fa-bolt" style="color:#a855f7;"></i> Acesso Rápido
         </h4>
-
-        <div style="display:flex; flex-direction:column; gap:0.8rem;">
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem; background:var(--bg-primary); border-radius:8px; border:1px solid var(--border-color);">
-                <span style="display:flex; align-items:center; gap:0.5rem; color:var(--text-secondary);">
-                    <i class="fa-solid fa-graduation-cap" style="color:var(--primary);"></i> Plataforma
-                </span>
-                <span style="font-weight:600;">Estudaí</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem; background:var(--bg-primary); border-radius:8px; border:1px solid var(--border-color);">
-                <span style="display:flex; align-items:center; gap:0.5rem; color:var(--text-secondary);">
-                    <i class="fa-solid fa-database" style="color:var(--success);"></i> Banco de dados
-                </span>
-                <span style="font-weight:600; color:var(--success);">Ativo</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem; background:var(--bg-primary); border-radius:8px; border:1px solid var(--border-color);">
-                <span style="display:flex; align-items:center; gap:0.5rem; color:var(--text-secondary);">
-                    <i class="fa-solid fa-robot" style="color:#a855f7;"></i> Assistente IA
-                </span>
-                <span style="font-weight:600; color:var(--success);">Online</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem; background:var(--bg-primary); border-radius:8px; border:1px solid var(--border-color);">
-                <span style="display:flex; align-items:center; gap:0.5rem; color:var(--text-secondary);">
-                    <i class="fa-solid fa-calendar-day" style="color:var(--warning);"></i> Última atualização
-                </span>
-                <span style="font-weight:600;">{{ now()->format('d/m/Y H:i') }}</span>
-            </div>
-        </div>
+        <a href="{{ route('admin.usuarios') }}" style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem; background:var(--bg-primary); border-radius:8px; border:1px solid var(--border-color); text-decoration:none; color:var(--text-primary); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border-color)'">
+            <span style="display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-users" style="color:var(--primary);"></i> Gerenciar Usuários</span>
+            <i class="fa-solid fa-arrow-right" style="color:var(--text-muted); font-size:0.75rem;"></i>
+        </a>
+        <a href="{{ route('admin.topicos') }}" style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem; background:var(--bg-primary); border-radius:8px; border:1px solid var(--border-color); text-decoration:none; color:var(--text-primary); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border-color)'">
+            <span style="display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-book-bookmark" style="color:#a855f7;"></i> Gerenciar Tópicos</span>
+            <i class="fa-solid fa-arrow-right" style="color:var(--text-muted); font-size:0.75rem;"></i>
+        </a>
+        <a href="{{ route('admin.conteudos') }}" style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem; background:var(--bg-primary); border-radius:8px; border:1px solid var(--border-color); text-decoration:none; color:var(--text-primary); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border-color)'">
+            <span style="display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-file-lines" style="color:var(--success);"></i> Gerenciar Conteúdos</span>
+            <i class="fa-solid fa-arrow-right" style="color:var(--text-muted); font-size:0.75rem;"></i>
+        </a>
+        <a href="{{ route('admin.quizzes') }}" style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem; background:var(--bg-primary); border-radius:8px; border:1px solid var(--border-color); text-decoration:none; color:var(--text-primary); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border-color)'">
+            <span style="display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-circle-question" style="color:var(--warning);"></i> Gerenciar Quizzes</span>
+            <i class="fa-solid fa-arrow-right" style="color:var(--text-muted); font-size:0.75rem;"></i>
+        </a>
+        <a href="{{ route('admin.relatorios') }}" style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem; background:var(--bg-primary); border-radius:8px; border:1px solid var(--border-color); text-decoration:none; color:var(--text-primary); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border-color)'">
+            <span style="display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-chart-pie" style="color:#ef4444;"></i> Ver Relatórios</span>
+            <i class="fa-solid fa-arrow-right" style="color:var(--text-muted); font-size:0.75rem;"></i>
+        </a>
     </div>
 </div>
 
