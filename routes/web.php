@@ -12,15 +12,22 @@ Route::get('/', function () {
 
 // ─── Rotas do Estudante (autenticadas) ───────────────────────────────────────
 Route::middleware('auth')->group(function () {
-    Route::get('/home', [StudentController::class, 'home'])->name('home');
+    Route::get('/home',      [StudentController::class, 'home'])->name('home');
     Route::get('/dashboard', [StudentController::class, 'dashboard'])->name('dashboard');
     Route::get('/assistant', [StudentController::class, 'assistant'])->name('assistant');
     Route::post('/assistant/message', [StudentController::class, 'message'])->name('assistant.message');
-    Route::get('/topicos', [StudentController::class, 'topicos'])->name('topicos');
+
+    // Tópicos
+    Route::get('/topicos',         [StudentController::class, 'topicos'])->name('topicos');
+    Route::get('/topicos/{topic}', [StudentController::class, 'showTopico'])->name('topico.show');
+
+    // Histórico e Recomendações
+    Route::get('/historico-quizzes', [StudentController::class, 'historicoQuizzes'])->name('historico.quizzes');
+    Route::get('/recomendacoes',     [StudentController::class, 'recomendacoes'])->name('recomendacoes');
 
     // Quizzes
-    Route::get('/quiz/{quiz}', [QuizController::class, 'show'])->name('quiz.show');
-    Route::post('/quiz/{quiz}/submit', [QuizController::class, 'submit'])->name('quiz.submit');
+    Route::get('/quiz/{quiz}',          [QuizController::class, 'show'])->name('quiz.show');
+    Route::post('/quiz/{quiz}/submit',  [QuizController::class, 'submit'])->name('quiz.submit');
 });
 
 // ─── Rotas do Administrador ───────────────────────────────────────────────────
@@ -32,9 +39,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Relatórios
     Route::get('/relatorios', [AdminController::class, 'relatorios'])->name('relatorios');
 
+    // Histórico de atividades
+    Route::get('/historico', [AdminController::class, 'historico'])->name('historico');
+
     // Usuários
-    Route::get('/usuarios', [AdminController::class, 'usuarios'])->name('usuarios');
-    Route::delete('/usuarios/{user}', [AdminController::class, 'destroyUsuario'])->name('usuarios.destroy');
+    Route::get('/usuarios',              [AdminController::class, 'usuarios'])->name('usuarios');
+    Route::get('/usuarios/{user}/edit',  [AdminController::class, 'editUsuario'])->name('usuarios.edit');
+    Route::put('/usuarios/{user}',       [AdminController::class, 'updateUsuario'])->name('usuarios.update');
+    Route::delete('/usuarios/{user}',    [AdminController::class, 'destroyUsuario'])->name('usuarios.destroy');
 
     // Tópicos
     Route::get('/topicos', [AdminController::class, 'topicos'])->name('topicos');

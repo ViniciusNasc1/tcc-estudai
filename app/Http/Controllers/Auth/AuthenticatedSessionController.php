@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\HistoricoAtividade;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,6 +31,9 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
+        // ─── Auditoria: registra login ────────────────────────────────────────
+        HistoricoAtividade::registrar($user->id, 'login');
+
         if ($user->tipo === 'administrador') {
             return redirect()->intended(route('admin.home'));
         }
@@ -42,6 +46,11 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // ─── Auditoria: registra logout antes de destruir a sessão ────────────
+        if (Auth::check()) {
+            HistoricoAtividade::registrar(Auth::id(), 'logout');
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

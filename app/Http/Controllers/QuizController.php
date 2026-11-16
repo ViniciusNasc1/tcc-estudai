@@ -7,6 +7,7 @@ use App\Models\QuizResult;
 use App\Models\TopicPerformance;
 use App\Models\Recommendation;
 use App\Models\Content;
+use App\Models\HistoricoAtividade;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -102,26 +103,32 @@ class QuizController extends Controller
                         $motivo = "Seu desempenho no quiz \"{$quiz->titulo}\" foi de {$scorePercentage}%. Recomendamos revisar este conteúdo para fixação e melhoria (Revisão Leve).";
                     }
 
-                    Recommendation::create([
-                        'user_id' => $user->id,
+                    $rec = Recommendation::create([
+                        'user_id'    => $user->id,
                         'content_id' => $content->id,
-                        'topic_id' => $quiz->topic_id,
-                        'motivo' => $motivo,
-                        'status' => 'pendente',
+                        'topic_id'   => $quiz->topic_id,
+                        'motivo'     => $motivo,
+                        'status'     => 'pendente',
                     ]);
                     $recommendationsGenerated++;
+
+                    // ─── Auditoria: recomendação gerada ───────────────────────
+                    HistoricoAtividade::registrar($user->id, 'recomendacao_gerada', $rec->id);
                 }
             }
         }
 
+        // ─── Auditoria: quiz realizado ────────────────────────────────────────
+        HistoricoAtividade::registrar($user->id, 'quiz_realizado', $quiz->id);
+
         // Prepara mensagem de feedback para a sessão
         $feedback = [
-            'quiz_title' => $quiz->titulo,
-            'score' => $scorePercentage,
+            'quiz_title'      => $quiz->titulo,
+            'score'           => $scorePercentage,
             'total_questions' => $totalQuestions,
-            'total_correct' => $totalCorrect,
-            'classification' => $classText,
-            'recs_count' => $recommendationsGenerated,
+            'total_correct'   => $totalCorrect,
+            'classification'  => $classText,
+            'recs_count'      => $recommendationsGenerated,
         ];
 
         return redirect()->route('dashboard')->with('quiz_feedback', $feedback);

@@ -71,6 +71,11 @@
                                 <i class="fa-solid fa-chart-pie"></i> Relatórios
                             </a>
                         </li>
+                        <li>
+                            <a href="{{ route('admin.historico') }}" class="nav-link {{ request()->routeIs('admin.historico') ? 'active' : '' }}">
+                                <i class="fa-solid fa-timeline"></i> Histórico
+                            </a>
+                        </li>
                     @else
                         {{-- Menu do Estudante --}}
                         <li>
@@ -79,7 +84,7 @@
                             </a>
                         </li>
                         <li>
-                            <a href="{{ route('topicos') }}" class="nav-link {{ request()->routeIs('topicos') ? 'active' : '' }}">
+                            <a href="{{ route('topicos') }}" class="nav-link {{ request()->routeIs('topicos*') ? 'active' : '' }}">
                                 <i class="fa-solid fa-book-open"></i> Tópicos
                             </a>
                         </li>
@@ -89,8 +94,18 @@
                             </a>
                         </li>
                         <li>
+                            <a href="{{ route('recomendacoes') }}" class="nav-link {{ request()->routeIs('recomendacoes') ? 'active' : '' }}">
+                                <i class="fa-solid fa-lightbulb"></i> Recomendações
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('historico.quizzes') }}" class="nav-link {{ request()->routeIs('historico.quizzes') ? 'active' : '' }}">
+                                <i class="fa-solid fa-clock-rotate-left"></i> Histórico
+                            </a>
+                        </li>
+                        <li>
                             <a href="{{ route('assistant') }}" class="nav-link {{ request()->routeIs('assistant') ? 'active' : '' }}">
-                                <i class="fa-solid fa-robot"></i> Assistente
+                                <i class="fa-solid fa-robot"></i> Assistente IA
                             </a>
                         </li>
                     @endif

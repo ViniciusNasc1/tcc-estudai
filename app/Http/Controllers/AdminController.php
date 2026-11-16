@@ -11,7 +11,10 @@ use App\Models\Alternative;
 use App\Models\QuizResult;
 use App\Models\Recommendation;
 use App\Models\TopicPerformance;
+use App\Models\Relatorio;
+use App\Models\HistoricoAtividade;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
@@ -54,13 +57,13 @@ class AdminController extends Controller
 
     public function relatorios()
     {
-        // Desempenho médio por tópico para gráfico de barras
+        // Desempenho médio por tópico
         $desempenhoTopicos = TopicPerformance::with('topic')
             ->selectRaw('topic_id, AVG(percentual_acertos) as media_acertos, COUNT(*) as total_alunos')
             ->groupBy('topic_id')
             ->get();
 
-        // Todos os estudantes com sua média
+        // Todos os estudantes com média
         $estudantes = User::where('tipo', 'estudante')
             ->withCount('quizResults as total_quizzes')
             ->with('quizResults')
@@ -71,20 +74,53 @@ class AdminController extends Controller
             })
             ->sortByDesc('media_desempenho');
 
-        // Evolução geral da plataforma (quizzes por dia)
+        // Evolução geral (média diária)
         $quizzesPorDia = QuizResult::selectRaw("date(created_at) as dia, AVG(pontuacao_percentual) as media")
             ->groupBy('dia')
             ->orderBy('dia')
             ->get();
 
-        $totalQuizzes        = QuizResult::count();
+        $totalQuizzes         = QuizResult::count();
         $mediaGeralPlataforma = QuizResult::avg('pontuacao_percentual') ?? 0;
-        $totalEstudantes     = User::where('tipo', 'estudante')->count();
-        $totalRecomendacoes  = Recommendation::count();
+        $totalEstudantes      = User::where('tipo', 'estudante')->count();
+        $totalRecomendacoes   = Recommendation::count();
+
+        // ─── Persiste o relatório no banco (snapshot) ─────────────────────────────
+        $admin = Auth::user();
+        $relatorio = Relatorio::create([
+            'titulo'     => 'Relatório Geral — ' . now()->format('d/m/Y H:i'),
+            'tipo'       => 'geral',
+            'gerado_por' => $admin->id,
+            'dados'      => [
+                'total_estudantes'      => $totalEstudantes,
+                'total_quizzes'         => $totalQuizzes,
+                'media_geral'           => round($mediaGeralPlataforma, 2),
+                'total_recomendacoes'   => $totalRecomendacoes,
+                'desempenho_por_topico' => $desempenhoTopicos->map(fn($d) => [
+                    'topico' => $d->topic->nome ?? '?',
+                    'media'  => round($d->media_acertos, 2),
+                ])->values(),
+                'ranking_estudantes'    => $estudantes->take(10)->map(fn($e) => [
+                    'nome'  => $e->name,
+                    'media' => round($e->media_desempenho, 2),
+                    'quizzes' => $e->total_quizzes,
+                ])->values(),
+            ],
+        ]);
+
+        // ─── Auditoria ────────────────────────────────────────────────────────
+        HistoricoAtividade::registrar($admin->id, 'relatorio_gerado', $relatorio->id);
+
+        // Busca histórico de relatórios gerados
+        $relatoriosAnteriores = Relatorio::with('gerador')
+            ->orderByDesc('created_at')
+            ->take(20)
+            ->get();
 
         return view('admin.relatorios', compact(
             'desempenhoTopicos', 'estudantes', 'quizzesPorDia',
-            'totalQuizzes', 'mediaGeralPlataforma', 'totalEstudantes', 'totalRecomendacoes'
+            'totalQuizzes', 'mediaGeralPlataforma', 'totalEstudantes',
+            'totalRecomendacoes', 'relatoriosAnteriores'
         ));
     }
 
@@ -112,6 +148,29 @@ class AdminController extends Controller
         }
         $user->delete();
         return back()->with('success', 'Usuário excluído com sucesso.');
+    }
+
+    public function editUsuario(User $user)
+    {
+        return view('admin.usuario_edit', compact('user'));
+    }
+
+    public function updateUsuario(Request $request, User $user)
+    {
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email,' . $user->id,
+            'tipo'     => 'required|in:estudante,administrador',
+            'password' => 'nullable|min:6|confirmed',
+        ]);
+
+        $data = $request->only('name', 'email', 'tipo');
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        $user->update($data);
+        return redirect()->route('admin.usuarios')->with('success', "Usuário {$user->name} atualizado com sucesso!");
     }
 
     // ─── Tópicos ──────────────────────────────────────────────────────────────
@@ -262,5 +321,16 @@ class AdminController extends Controller
     {
         $question->delete();
         return back()->with('success', 'Questão excluída com sucesso!');
+    }
+
+    // ─── Histórico de Atividades ───────────────────────────────────────────────
+
+    public function historico()
+    {
+        $historico = HistoricoAtividade::with('usuario')
+            ->orderByDesc('created_at')
+            ->paginate(50);
+
+        return view('admin.historico', compact('historico'));
     }
 }

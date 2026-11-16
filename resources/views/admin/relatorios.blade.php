@@ -132,6 +132,80 @@
         </div>
     </div>
 </div>
+
+{{-- ─── Histórico de Relatórios Salvos ───────────────────────────────────────── --}}
+<div style="margin-top:2.5rem;">
+    <h3 class="section-title">
+        <i class="fa-solid fa-clock-rotate-left" style="color:#a855f7;"></i> Histórico de Relatórios Gerados
+    </h3>
+    <div class="card" style="padding:0; overflow:hidden;">
+        <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr style="border-bottom:1px solid var(--border-color); background:var(--bg-primary);">
+                        <th style="padding:1rem 1.5rem; text-align:left; font-size:0.8rem; text-transform:uppercase; color:var(--text-secondary); font-weight:600;">#</th>
+                        <th style="padding:1rem 1.5rem; text-align:left; font-size:0.8rem; text-transform:uppercase; color:var(--text-secondary); font-weight:600;">Título</th>
+                        <th style="padding:1rem 1.5rem; text-align:center; font-size:0.8rem; text-transform:uppercase; color:var(--text-secondary); font-weight:600;">Tipo</th>
+                        <th style="padding:1rem 1.5rem; text-align:center; font-size:0.8rem; text-transform:uppercase; color:var(--text-secondary); font-weight:600;">Gerado por</th>
+                        <th style="padding:1rem 1.5rem; text-align:center; font-size:0.8rem; text-transform:uppercase; color:var(--text-secondary); font-weight:600;">Data</th>
+                        <th style="padding:1rem 1.5rem; text-align:center; font-size:0.8rem; text-transform:uppercase; color:var(--text-secondary); font-weight:600;">Snapshot</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($relatoriosAnteriores as $rel)
+                        <tr style="border-bottom:1px solid var(--border-color); transition:background 0.2s;" onmouseover="this.style.background='rgba(94,92,230,0.05)'" onmouseout="this.style.background='transparent'">
+                            <td style="padding:1rem 1.5rem; color:var(--text-secondary); font-size:0.85rem;">{{ $rel->id }}</td>
+                            <td style="padding:1rem 1.5rem; font-weight:600;">{{ $rel->titulo }}</td>
+                            <td style="padding:1rem 1.5rem; text-align:center;">
+                                <span style="background:var(--primary-light); color:var(--primary); border-radius:20px; padding:0.3rem 0.8rem; font-size:0.75rem; font-weight:700; text-transform:capitalize;">{{ $rel->tipo }}</span>
+                            </td>
+                            <td style="padding:1rem 1.5rem; text-align:center; font-size:0.9rem;">{{ $rel->gerador->name ?? '—' }}</td>
+                            <td style="padding:1rem 1.5rem; text-align:center; color:var(--text-secondary); font-size:0.85rem;">{{ $rel->created_at->format('d/m/Y H:i') }}</td>
+                            <td style="padding:1rem 1.5rem; text-align:center;">
+                                <button onclick="document.getElementById('snapshot-{{ $rel->id }}').style.display = document.getElementById('snapshot-{{ $rel->id }}').style.display === 'none' ? 'block' : 'none'"
+                                    style="background:var(--primary-light); color:var(--primary); border:none; border-radius:8px; padding:0.4rem 0.8rem; cursor:pointer; font-size:0.8rem; font-weight:600;">
+                                    <i class="fa-solid fa-eye"></i> Ver dados
+                                </button>
+                            </td>
+                        </tr>
+                        {{-- Linha expansível com snapshot JSON --}}
+                        <tr id="snapshot-{{ $rel->id }}" style="display:none; background:var(--bg-primary);">
+                            <td colspan="6" style="padding:1rem 1.5rem;">
+                                <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.5rem; font-weight:600;">
+                                    <i class="fa-solid fa-database"></i> Dados salvos no momento da geração:
+                                </div>
+                                <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
+                                    <div style="background:var(--bg-secondary); border-radius:8px; padding:0.8rem 1.2rem; border:1px solid var(--border-color);">
+                                        <div style="font-size:0.75rem; color:var(--text-secondary);">Estudantes</div>
+                                        <div style="font-weight:700; font-size:1.1rem;">{{ $rel->dados['total_estudantes'] ?? '—' }}</div>
+                                    </div>
+                                    <div style="background:var(--bg-secondary); border-radius:8px; padding:0.8rem 1.2rem; border:1px solid var(--border-color);">
+                                        <div style="font-size:0.75rem; color:var(--text-secondary);">Quizzes realizados</div>
+                                        <div style="font-weight:700; font-size:1.1rem;">{{ $rel->dados['total_quizzes'] ?? '—' }}</div>
+                                    </div>
+                                    <div style="background:var(--bg-secondary); border-radius:8px; padding:0.8rem 1.2rem; border:1px solid var(--border-color);">
+                                        <div style="font-size:0.75rem; color:var(--text-secondary);">Média geral</div>
+                                        <div style="font-weight:700; font-size:1.1rem;">{{ $rel->dados['media_geral'] ?? '—' }}%</div>
+                                    </div>
+                                    <div style="background:var(--bg-secondary); border-radius:8px; padding:0.8rem 1.2rem; border:1px solid var(--border-color);">
+                                        <div style="font-size:0.75rem; color:var(--text-secondary);">Recomendações</div>
+                                        <div style="font-weight:700; font-size:1.1rem;">{{ $rel->dados['total_recomendacoes'] ?? '—' }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" style="padding:2rem; text-align:center; color:var(--text-secondary);">
+                                Nenhum relatório gerado ainda.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')

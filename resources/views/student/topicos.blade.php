@@ -20,7 +20,7 @@
         @php
             $perf    = $performances->get($topic->id);
             $pct     = $perf ? round($perf->percentual_acertos) : null;
-            $status  = $perf ? $perf->status_classificacao : null;
+            $status  = $perf ? $perf->classificacao : null;
             $badgeLabel = match($status) {
                 'dominado'          => 'Dominado',
                 'revisao_leve'      => 'Revisão leve',

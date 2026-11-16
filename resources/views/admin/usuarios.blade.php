@@ -78,17 +78,26 @@
                         </td>
                         <td style="padding:1rem 1.5rem; text-align:center; color:var(--text-secondary); font-size:0.85rem;">{{ $usuario->created_at->format('d/m/Y') }}</td>
                         <td style="padding:1rem 1.5rem; text-align:center;">
-                            @if($usuario->tipo !== 'administrador')
-                                <form action="{{ route('admin.usuarios.destroy', $usuario) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir o usuário {{ addslashes($usuario->name) }}? Esta ação não pode ser desfeita.');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" style="background:var(--danger-light); color:var(--danger); border:1px solid var(--danger); border-radius:8px; padding:0.4rem 0.8rem; cursor:pointer; font-size:0.8rem; font-weight:600; transition:all 0.2s;" onmouseover="this.style.background='var(--danger)'; this.style.color='#fff';" onmouseout="this.style.background='var(--danger-light)'; this.style.color='var(--danger)';">
-                                        <i class="fa-solid fa-trash"></i> Excluir
-                                    </button>
-                                </form>
-                            @else
-                                <span style="color:var(--text-muted); font-size:0.8rem;">—</span>
-                            @endif
+                            <div style="display:flex; gap:0.5rem; justify-content:center;">
+                                {{-- Editar (todos os usuários) --}}
+                                <a href="{{ route('admin.usuarios.edit', $usuario) }}"
+                                   style="background:var(--primary-light); color:var(--primary); border:1px solid var(--primary); border-radius:8px; padding:0.4rem 0.7rem; font-size:0.8rem; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem;">
+                                    <i class="fa-solid fa-pen"></i> Editar
+                                </a>
+                                {{-- Excluir (apenas estudantes) --}}
+                                @if($usuario->tipo !== 'administrador')
+                                    <form action="{{ route('admin.usuarios.destroy', $usuario) }}" method="POST"
+                                          onsubmit="return confirm('Excluir {{ addslashes($usuario->name) }}? Esta ação não pode ser desfeita.');">
+                                        @csrf @method('DELETE')
+                                        <button type="submit"
+                                            style="background:var(--danger-light); color:var(--danger); border:1px solid var(--danger); border-radius:8px; padding:0.4rem 0.7rem; cursor:pointer; font-size:0.8rem; font-weight:600;"
+                                            onmouseover="this.style.background='var(--danger)'; this.style.color='#fff';"
+                                            onmouseout="this.style.background='var(--danger-light)'; this.style.color='var(--danger)';">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @empty
