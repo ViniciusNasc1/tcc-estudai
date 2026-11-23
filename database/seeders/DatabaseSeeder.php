@@ -55,60 +55,60 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 3. Criar Conteúdos de Estudo
-        // Banco de Dados
+        // ── Banco de Dados ───────────────────────────────────────────────────────
         $cSQL = Content::create([
-            'titulo' => 'Consultas SQL - SELECT, WHERE e JOIN',
+            'titulo'    => 'Consultas SQL - SELECT, WHERE e JOIN',
             'descricao' => 'Aprenda a realizar consultas em bancos de dados relacionais utilizando os principais comandos do SQL para seleção, filtragem e junção de tabelas.',
-            'url' => 'https://example.com/conteudos/sql-queries',
-            'topic_id' => $topicBD->id,
+            'url'       => 'https://www.w3schools.com/sql/sql_select.asp',
+            'topic_id'  => $topicBD->id,
         ]);
         Content::create([
-            'titulo' => 'Modelagem Relacional e Chaves Estrangeiras',
+            'titulo'    => 'Modelagem Relacional e Chaves Estrangeiras',
             'descricao' => 'Entenda os conceitos de tabelas, integridade referencial, chaves primárias e chaves estrangeiras na modelagem de banco de dados.',
-            'url' => 'https://example.com/conteudos/modelagem-relacional',
-            'topic_id' => $topicBD->id,
+            'url'       => 'https://www.devmedia.com.br/modelo-relacional-de-banco-de-dados/19640',
+            'topic_id'  => $topicBD->id,
         ]);
 
-        // Algoritmos
+        // ── Algoritmos ───────────────────────────────────────────────────────────
         Content::create([
-            'titulo' => 'Estruturas de Controle de Fluxo (IF, FOR, WHILE)',
+            'titulo'    => 'Estruturas de Controle de Fluxo (IF, FOR, WHILE)',
             'descricao' => 'Aprenda a controlar a execução de lógica no código usando desvios condicionais e loops de repetição.',
-            'url' => 'https://example.com/conteudos/controle-fluxo',
-            'topic_id' => $topicAlg->id,
+            'url'       => 'https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Guide/Control_flow_and_error_handling',
+            'topic_id'  => $topicAlg->id,
         ]);
         Content::create([
-            'titulo' => 'Recursividade e Funções',
+            'titulo'    => 'Recursividade e Funções',
             'descricao' => 'Conceito de modularização de código e como criar funções recursivas de forma segura.',
-            'url' => 'https://example.com/conteudos/recursividade',
-            'topic_id' => $topicAlg->id,
+            'url'       => 'https://developer.mozilla.org/pt-BR/docs/Glossary/Recursion',
+            'topic_id'  => $topicAlg->id,
         ]);
 
-        // Redes
+        // ── Redes ────────────────────────────────────────────────────────────────
         $cOSI = Content::create([
-            'titulo' => 'Modelo OSI e TCP/IP',
+            'titulo'    => 'Modelo OSI e TCP/IP',
             'descricao' => 'Estudo detalhado das camadas de rede (Física, Enlace, Rede, Transporte, Sessão, Apresentação, Aplicação) e protocolos fundamentais de comunicação.',
-            'url' => 'https://example.com/conteudos/modelo-osi',
-            'topic_id' => $topicRedes->id,
+            'url'       => 'https://www.cloudflare.com/pt-br/learning/ddos/glossary/open-systems-interconnection-model-osi/',
+            'topic_id'  => $topicRedes->id,
         ]);
         Content::create([
-            'titulo' => 'Protocolos HTTP e HTTPS',
+            'titulo'    => 'Protocolos HTTP e HTTPS',
             'descricao' => 'Como funciona a comunicação cliente-servidor na web, requisições GET/POST e segurança com SSL/TLS.',
-            'url' => 'https://example.com/conteudos/http-https',
-            'topic_id' => $topicRedes->id,
+            'url'       => 'https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Overview',
+            'topic_id'  => $topicRedes->id,
         ]);
 
-        // Prog. Web
+        // ── Prog. Web ────────────────────────────────────────────────────────────
         Content::create([
-            'titulo' => 'HTML5 e CSS3 Básico',
+            'titulo'    => 'HTML5 e CSS3 Básico',
             'descricao' => 'Criação de páginas web estruturadas com tags semânticas e estilização responsiva com Flexbox/CSS Grid.',
-            'url' => 'https://example.com/conteudos/html5-css3',
-            'topic_id' => $topicProgWeb->id,
+            'url'       => 'https://developer.mozilla.org/pt-BR/docs/Learn/Getting_started_with_the_web/HTML_basics',
+            'topic_id'  => $topicProgWeb->id,
         ]);
         Content::create([
-            'titulo' => 'JavaScript Moderno (ES6+)',
+            'titulo'    => 'JavaScript Moderno (ES6+)',
             'descricao' => 'Manipulação do DOM, eventos, arrow functions, promises e controle de escopo (let/const) na web.',
-            'url' => 'https://example.com/conteudos/js-es6',
-            'topic_id' => $topicProgWeb->id,
+            'url'       => 'https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Guide',
+            'topic_id'  => $topicProgWeb->id,
         ]);
 
         // 4. Criar Quizzes e Questões
