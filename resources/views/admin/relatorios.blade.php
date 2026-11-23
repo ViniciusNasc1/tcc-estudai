@@ -10,10 +10,26 @@
         </h2>
         <p style="color:var(--text-secondary); font-size:0.9rem;">Visão detalhada do desempenho geral dos estudantes.</p>
     </div>
-    <a href="{{ route('admin.home') }}" class="btn" style="background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary);">
-        <i class="fa-solid fa-arrow-left"></i> Voltar
-    </a>
+    <div style="display:flex; gap:0.8rem; align-items:center;">
+        {{-- Botão Gerar Relatório --}}
+        <form action="{{ route('admin.relatorios.gerar') }}" method="POST">
+            @csrf
+            <button type="submit" class="btn btn-primary" style="display:flex; align-items:center; gap:0.5rem;">
+                <i class="fa-solid fa-file-circle-plus"></i> Gerar Relatório
+            </button>
+        </form>
+        <a href="{{ route('admin.home') }}" class="btn" style="background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary);">
+            <i class="fa-solid fa-arrow-left"></i> Voltar
+        </a>
+    </div>
 </div>
+
+{{-- Flash de sucesso --}}
+@if(session('success'))
+    <div style="background:var(--success-light); border:1px solid var(--success); border-radius:12px; padding:1rem 1.5rem; margin-bottom:1.5rem; color:var(--success); font-weight:600; display:flex; align-items:center; gap:0.6rem;">
+        <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
+    </div>
+@endif
 
 {{-- Métricas globais --}}
 <div class="grid-4" style="margin-bottom:2rem;">

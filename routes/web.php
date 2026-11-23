@@ -25,6 +25,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/historico-quizzes', [StudentController::class, 'historicoQuizzes'])->name('historico.quizzes');
     Route::get('/recomendacoes',     [StudentController::class, 'recomendacoes'])->name('recomendacoes');
 
+    // Trilha de Estudo
+    Route::get('/trilha', [StudentController::class, 'trilha'])->name('trilha');
+
     // Quizzes
     Route::get('/quiz/{quiz}',          [QuizController::class, 'show'])->name('quiz.show');
     Route::post('/quiz/{quiz}/submit',  [QuizController::class, 'submit'])->name('quiz.submit');
@@ -37,7 +40,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/home', [AdminController::class, 'home'])->name('home');
 
     // Relatórios
-    Route::get('/relatorios', [AdminController::class, 'relatorios'])->name('relatorios');
+    Route::get('/relatorios',        [AdminController::class, 'relatorios'])->name('relatorios');
+    Route::post('/relatorios/gerar', [AdminController::class, 'gerarRelatorio'])->name('relatorios.gerar');
 
     // Histórico de atividades
     Route::get('/historico', [AdminController::class, 'historico'])->name('historico');

@@ -57,13 +57,12 @@ class AdminController extends Controller
 
     public function relatorios()
     {
-        // Desempenho médio por tópico
+        // ─── Apenas carrega os dados para exibição (SEM salvar relatório) ────
         $desempenhoTopicos = TopicPerformance::with('topic')
             ->selectRaw('topic_id, AVG(percentual_acertos) as media_acertos, COUNT(*) as total_alunos')
             ->groupBy('topic_id')
             ->get();
 
-        // Todos os estudantes com média
         $estudantes = User::where('tipo', 'estudante')
             ->withCount('quizResults as total_quizzes')
             ->with('quizResults')
@@ -74,7 +73,6 @@ class AdminController extends Controller
             })
             ->sortByDesc('media_desempenho');
 
-        // Evolução geral (média diária)
         $quizzesPorDia = QuizResult::selectRaw("date(created_at) as dia, AVG(pontuacao_percentual) as media")
             ->groupBy('dia')
             ->orderBy('dia')
@@ -85,8 +83,41 @@ class AdminController extends Controller
         $totalEstudantes      = User::where('tipo', 'estudante')->count();
         $totalRecomendacoes   = Recommendation::count();
 
-        // ─── Persiste o relatório no banco (snapshot) ─────────────────────────────
+        // Histórico de relatórios já gerados
+        $relatoriosAnteriores = Relatorio::with('gerador')
+            ->orderByDesc('created_at')
+            ->take(20)
+            ->get();
+
+        return view('admin.relatorios', compact(
+            'desempenhoTopicos', 'estudantes', 'quizzesPorDia',
+            'totalQuizzes', 'mediaGeralPlataforma', 'totalEstudantes',
+            'totalRecomendacoes', 'relatoriosAnteriores'
+        ));
+    }
+
+    // ─── Gerar e salvar relatório (acionado pelo botão) ───────────────────────
+    public function gerarRelatorio()
+    {
         $admin = Auth::user();
+
+        $desempenhoTopicos = TopicPerformance::with('topic')
+            ->selectRaw('topic_id, AVG(percentual_acertos) as media_acertos')
+            ->groupBy('topic_id')
+            ->get();
+
+        $totalQuizzes         = QuizResult::count();
+        $mediaGeralPlataforma = QuizResult::avg('pontuacao_percentual') ?? 0;
+        $totalEstudantes      = User::where('tipo', 'estudante')->count();
+        $totalRecomendacoes   = Recommendation::count();
+
+        $estudantes = User::where('tipo', 'estudante')
+            ->withCount('quizResults as total_quizzes')
+            ->with('quizResults')
+            ->get()
+            ->map(fn($e) => tap($e, fn($e) => $e->media_desempenho = $e->quizResults->avg('pontuacao_percentual') ?? 0))
+            ->sortByDesc('media_desempenho');
+
         $relatorio = Relatorio::create([
             'titulo'     => 'Relatório Geral — ' . now()->format('d/m/Y H:i'),
             'tipo'       => 'geral',
@@ -101,27 +132,17 @@ class AdminController extends Controller
                     'media'  => round($d->media_acertos, 2),
                 ])->values(),
                 'ranking_estudantes'    => $estudantes->take(10)->map(fn($e) => [
-                    'nome'  => $e->name,
-                    'media' => round($e->media_desempenho, 2),
+                    'nome'    => $e->name,
+                    'media'   => round($e->media_desempenho, 2),
                     'quizzes' => $e->total_quizzes,
                 ])->values(),
             ],
         ]);
 
-        // ─── Auditoria ────────────────────────────────────────────────────────
         HistoricoAtividade::registrar($admin->id, 'relatorio_gerado', $relatorio->id);
 
-        // Busca histórico de relatórios gerados
-        $relatoriosAnteriores = Relatorio::with('gerador')
-            ->orderByDesc('created_at')
-            ->take(20)
-            ->get();
-
-        return view('admin.relatorios', compact(
-            'desempenhoTopicos', 'estudantes', 'quizzesPorDia',
-            'totalQuizzes', 'mediaGeralPlataforma', 'totalEstudantes',
-            'totalRecomendacoes', 'relatoriosAnteriores'
-        ));
+        return redirect()->route('admin.relatorios')
+            ->with('success', "✅ Relatório \"{$relatorio->titulo}\" gerado e salvo com sucesso!");
     }
 
     // ─── Usuários ─────────────────────────────────────────────────────────────

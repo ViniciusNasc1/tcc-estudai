@@ -108,6 +108,11 @@
                                 <i class="fa-solid fa-robot"></i> Assistente IA
                             </a>
                         </li>
+                        <li>
+                            <a href="{{ route('trilha') }}" class="nav-link {{ request()->routeIs('trilha') ? 'active' : '' }}">
+                                <i class="fa-solid fa-route"></i> Trilha
+                            </a>
+                        </li>
                     @endif
                 </ul>
 
