@@ -275,9 +275,10 @@ class AdminController extends Controller
 
     public function quizzes()
     {
-        $quizzes = Quiz::with(['topic', 'questions.alternatives'])->orderBy('titulo')->get();
-        $topicos = Topic::orderBy('nome')->get();
-        return view('admin.quizzes', compact('quizzes', 'topicos'));
+        $quizzes  = Quiz::with(['topic', 'questions.alternatives', 'questions.content'])->orderBy('titulo')->get();
+        $topicos  = Topic::orderBy('nome')->get();
+        $conteudos = Content::with('topic')->orderBy('titulo')->get();
+        return view('admin.quizzes', compact('quizzes', 'topicos', 'conteudos'));
     }
 
     public function storeQuiz(Request $request)
@@ -320,11 +321,13 @@ class AdminController extends Controller
             'alternativas.*.descricao'    => 'required|string',
             'alternativas.*.correta'      => 'nullable',
             'alternativa_correta'         => 'required|integer',
+            'content_id'                  => 'nullable|exists:contents,id',
         ]);
 
         $question = Question::create([
-            'enunciado' => $request->enunciado,
-            'quiz_id'   => $quiz->id,
+            'enunciado'  => $request->enunciado,
+            'quiz_id'    => $quiz->id,
+            'content_id' => $request->content_id ?: null,
         ]);
 
         foreach ($request->alternativas as $index => $alt) {

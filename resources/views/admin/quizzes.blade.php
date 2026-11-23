@@ -82,6 +82,17 @@
                                             </button>
                                         </form>
                                     </div>
+                                    {{-- Conteúdo vinculado --}}
+                                    @if($questao->content)
+                                        <div style="margin-bottom:0.6rem; font-size:0.78rem; display:flex; align-items:center; gap:0.4rem; color:#6366f1;">
+                                            <i class="fa-solid fa-link"></i>
+                                            <span>Recomenda: <strong>{{ $questao->content->titulo }}</strong></span>
+                                        </div>
+                                    @else
+                                        <div style="margin-bottom:0.6rem; font-size:0.78rem; color:var(--text-muted);">
+                                            <i class="fa-solid fa-link-slash"></i> Sem conteúdo vinculado (usará fallback do tópico)
+                                        </div>
+                                    @endif
                                     <div style="display:flex; flex-direction:column; gap:0.4rem;">
                                         @foreach($questao->alternatives as $alt)
                                             <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; padding:0.4rem 0.6rem; border-radius:6px; background:{{ $alt->correta ? 'rgba(48,209,88,0.1)' : 'transparent' }}; border:1px solid {{ $alt->correta ? 'var(--success)' : 'var(--border-color)' }};">
@@ -116,6 +127,21 @@
                             </div>
 
                             <input type="hidden" name="alternativa_correta" id="correta-{{ $quiz->id }}" value="0">
+
+                            {{-- Vínculo de conteúdo específico --}}
+                            <div class="form-group">
+                                <label style="font-size:0.85rem; font-weight:500; color:var(--text-secondary);">
+                                    <i class="fa-solid fa-link" style="color:#6366f1;"></i>
+                                    Conteúdo vinculado
+                                    <span style="font-weight:400; color:var(--text-muted)">(opcional — recomendado ao aluno se ele errar esta questão)</span>
+                                </label>
+                                <select name="content_id" class="form-control" style="padding:0.6rem 0.9rem; font-size:0.85rem;">
+                                    <option value="">— Nenhum (usa todos os conteúdos do tópico como fallback) —</option>
+                                    @foreach($conteudos->where('topic_id', $quiz->topic_id) as $c)
+                                        <option value="{{ $c->id }}">{{ $c->titulo }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
                             <label style="font-size:0.85rem; font-weight:500; color:var(--text-secondary); display:block; margin-bottom:0.6rem;">Alternativas * <span style="font-weight:400; color:var(--text-muted)">(clique em ✓ para marcar a correta)</span></label>
                             <div id="alts-{{ $quiz->id }}" style="display:flex; flex-direction:column; gap:0.5rem;">

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Question extends Model
 {
-    protected $fillable = ['enunciado', 'quiz_id'];
+    protected $fillable = ['enunciado', 'quiz_id', 'content_id'];
 
     public function quiz(): BelongsTo
     {
@@ -18,5 +18,14 @@ class Question extends Model
     public function alternatives(): HasMany
     {
         return $this->hasMany(Alternative::class, 'question_id');
+    }
+
+    /**
+     * Conteúdo específico vinculado a esta questão.
+     * Quando o aluno errar essa questão, esse conteúdo será recomendado.
+     */
+    public function content(): BelongsTo
+    {
+        return $this->belongsTo(Content::class);
     }
 }

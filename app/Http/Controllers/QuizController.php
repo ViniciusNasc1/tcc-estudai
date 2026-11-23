@@ -15,9 +15,7 @@ class QuizController extends Controller
 {
     public function show($id)
     {
-        // Carrega o quiz com as questões e as alternativas correspondentes
         $quiz = Quiz::with(['topic', 'questions.alternatives'])->findOrFail($id);
-        
         return view('student.quiz', compact('quiz'));
     }
 
@@ -25,82 +23,121 @@ class QuizController extends Controller
     {
         $user = Auth::user();
         $quiz = Quiz::with('topic')->findOrFail($id);
-        
+
         $request->validate([
             'answers' => 'required|array',
         ]);
 
         $submittedAnswers = $request->answers; // [question_id => alternative_id]
-        
-        // Carrega todas as questões e alternativas para correção
-        $questions = $quiz->questions()->with('alternatives')->get();
-        $totalQuestions = $questions->count();
-        $totalCorrect = 0;
+
+        // Carrega questões com alternativas E conteúdo vinculado
+        $questions = $quiz->questions()->with(['alternatives', 'content'])->get();
+
+        $totalQuestions  = $questions->count();
+        $totalCorrect    = 0;
+        $wrongContentIds = collect(); // IDs de conteúdos ligados às questões erradas
 
         foreach ($questions as $question) {
             $selectedAltId = $submittedAnswers[$question->id] ?? null;
+            $acertou = false;
+
             if ($selectedAltId) {
-                // Procura a alternativa no banco e verifica se é correta
                 $alternative = $question->alternatives->firstWhere('id', $selectedAltId);
                 if ($alternative && $alternative->correta) {
                     $totalCorrect++;
+                    $acertou = true;
                 }
+            }
+
+            // Se errou e a questão tem conteúdo específico vinculado → marca para recomendar
+            if (!$acertou && $question->content_id) {
+                $wrongContentIds->push($question->content_id);
             }
         }
 
-        // Calcula a porcentagem
-        $scorePercentage = $totalQuestions > 0 ? ($totalCorrect / $totalQuestions) * 100 : 0;
+        // Remove duplicatas (duas questões podem apontar ao mesmo conteúdo)
+        $wrongContentIds = $wrongContentIds->unique()->values();
 
-        // Salva o resultado do Quiz
+        $scorePercentage = $totalQuestions > 0
+            ? ($totalCorrect / $totalQuestions) * 100
+            : 0;
+
+        // Salva resultado do quiz
         QuizResult::create([
-            'user_id' => $user->id,
-            'quiz_id' => $quiz->id,
+            'user_id'              => $user->id,
+            'quiz_id'              => $quiz->id,
             'pontuacao_percentual' => $scorePercentage,
-            'total_questoes' => $totalQuestions,
-            'total_acertos' => $totalCorrect,
+            'total_questoes'       => $totalQuestions,
+            'total_acertos'        => $totalCorrect,
         ]);
 
-        // Determina a classificação com base nas Regras de Negócio (RN06)
-        // Acima de 80%: dominado
-        // Entre 50% e 79%: revisao_leve
-        // Abaixo de 50%: estudo_prioritario
+        // Classificação (RN06)
         if ($scorePercentage >= 80) {
             $classification = 'dominado';
-            $classText = 'Dominado';
+            $classText      = 'Dominado';
         } elseif ($scorePercentage >= 50) {
             $classification = 'revisao_leve';
-            $classText = 'Revisão Leve';
+            $classText      = 'Revisão Leve';
         } else {
             $classification = 'estudo_prioritario';
-            $classText = 'Estudo Prioritário';
+            $classText      = 'Estudo Prioritário';
         }
 
-        // Atualiza ou cria o desempenho por tópico (RN05 / RN08)
+        // Atualiza desempenho por tópico (RN05 / RN08)
         TopicPerformance::updateOrCreate(
-            ['user_id' => $user->id, 'topic_id' => $quiz->topic_id],
+            ['user_id'  => $user->id, 'topic_id' => $quiz->topic_id],
             ['percentual_acertos' => $scorePercentage, 'classificacao' => $classification]
         );
 
-        // Mecanismo de recomendação adaptativa (RN07):
-        // Recomenda automaticamente conteúdos relacionados caso o desempenho seja < 80%
+        // ── Recomendações adaptativas (RN07) ──────────────────────────────────
         $recommendationsGenerated = 0;
+
         if ($scorePercentage < 80) {
-            // Busca conteúdos do tópico
-            $contents = Content::where('topic_id', $quiz->topic_id)->get();
-            
-            foreach ($contents as $content) {
-                // Verifica se já existe uma recomendação pendente para este conteúdo
+
+            // ── Estratégia 1: conteúdos vinculados às questões ERRADAS ──────
+            $contentsToRecommend = collect();
+
+            if ($wrongContentIds->isNotEmpty()) {
+                $contentsToRecommend = Content::whereIn('id', $wrongContentIds)->get();
+            }
+
+            // ── Estratégia 2 (fallback): questões sem vínculo → tópico inteiro
+            // Verifica se há questões erradas SEM content_id; se sim, pega todo
+            // o conteúdo do tópico para garantir cobertura completa.
+            $hasOrphanWrongs = $questions->contains(function ($q) use ($submittedAnswers) {
+                $selectedAltId = $submittedAnswers[$q->id] ?? null;
+                if (!$selectedAltId) return !$q->content_id; // não respondeu e sem vínculo
+                $alt = $q->alternatives->firstWhere('id', $selectedAltId);
+                $errou = !($alt && $alt->correta);
+                return $errou && !$q->content_id;
+            });
+
+            if ($hasOrphanWrongs) {
+                // Adiciona todos os conteúdos do tópico (mesclando com os específicos)
+                $topicContents = Content::where('topic_id', $quiz->topic_id)->get();
+                $contentsToRecommend = $contentsToRecommend
+                    ->merge($topicContents)
+                    ->unique('id')
+                    ->values();
+            }
+
+            // ── Cria as recomendações (sem duplicatas pendentes) ─────────────
+            foreach ($contentsToRecommend as $content) {
                 $existing = Recommendation::where('user_id', $user->id)
                     ->where('content_id', $content->id)
                     ->where('status', 'pendente')
                     ->exists();
 
                 if (!$existing) {
-                    $motivo = "";
-                    if ($classification === 'estudo_prioritario') {
-                        $motivo = "Você acertou apenas {$scorePercentage}% das questões do quiz \"{$quiz->titulo}\". O sistema identificou dificuldades importantes em {$quiz->topic->nome} (Estudo Prioritário).";
+                    // Motivo descritivo: menciona se veio de questão específica ou do tópico
+                    if ($wrongContentIds->contains($content->id)) {
+                        $motivo = "Você errou questão(ões) do quiz \"{$quiz->titulo}\" "
+                            . "relacionadas a este conteúdo específico. "
+                            . "Classificação: {$classText}.";
                     } else {
-                        $motivo = "Seu desempenho no quiz \"{$quiz->titulo}\" foi de {$scorePercentage}%. Recomendamos revisar este conteúdo para fixação e melhoria (Revisão Leve).";
+                        $motivo = "Você obteve {$scorePercentage}% no quiz \"{$quiz->titulo}\" "
+                            . "e errou questões sem conteúdo vinculado. Revise o material do tópico "
+                            . "{$quiz->topic->nome} ({$classText}).";
                     }
 
                     $rec = Recommendation::create([
@@ -110,18 +147,16 @@ class QuizController extends Controller
                         'motivo'     => $motivo,
                         'status'     => 'pendente',
                     ]);
-                    $recommendationsGenerated++;
 
-                    // ─── Auditoria: recomendação gerada ───────────────────────
+                    $recommendationsGenerated++;
                     HistoricoAtividade::registrar($user->id, 'recomendacao_gerada', $rec->id);
                 }
             }
         }
 
-        // ─── Auditoria: quiz realizado ────────────────────────────────────────
+        // Auditoria: quiz realizado
         HistoricoAtividade::registrar($user->id, 'quiz_realizado', $quiz->id);
 
-        // Prepara mensagem de feedback para a sessão
         $feedback = [
             'quiz_title'      => $quiz->titulo,
             'score'           => $scorePercentage,
