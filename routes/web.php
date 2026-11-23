@@ -27,6 +27,7 @@ Route::middleware('auth')->group(function () {
 
     // Trilha de Estudo
     Route::get('/trilha', [StudentController::class, 'trilha'])->name('trilha');
+    Route::post('/trilha/gerar/{topic}', [StudentController::class, 'gerarTrilha'])->name('trilha.gerar');
 
     // Quizzes
     Route::get('/quiz/{quiz}',          [QuizController::class, 'show'])->name('quiz.show');

@@ -286,8 +286,6 @@ PROMPT;
             ], 500);
         }
 
-        // Modelo Gemini. O 3.8 Flash estava sobrecarregado no nível gratuito
-        // e a resposta não voltava dentro do timeout.
         $model = 'gemini-3.5-flash-lite';
 
         $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
@@ -397,23 +395,35 @@ PROMPT;
         // Todos os tópicos
         $allTopics = Topic::withCount(['contents', 'quizzes'])->get();
 
-        // Montar trilha ordenada
+        // Montar trilha ordenada por nível de prioridade
         $trilha = collect();
 
-        // 1º — Estudo prioritário
+        // 1º — Estudo prioritário (ordenado por percentual_acertos ASC = pior primeiro)
+        $prioritarios = [];
         foreach ($allTopics as $t) {
             $p = $performances->get($t->id);
             if ($p && $p->classificacao === 'estudo_prioritario') {
-                $trilha->push(['topic' => $t, 'nivel' => 'prioritario', 'perf' => $p]);
+                $prioritarios[] = ['topic' => $t, 'nivel' => 'prioritario', 'perf' => $p];
             }
         }
-        // 2º — Revisão leve
+        usort($prioritarios, fn($a, $b) =>
+            ($a['perf']->percentual_acertos ?? 0) <=> ($b['perf']->percentual_acertos ?? 0)
+        );
+        foreach ($prioritarios as $item) $trilha->push($item);
+
+        // 2º — Revisão leve (ordenado por percentual_acertos ASC)
+        $revisao = [];
         foreach ($allTopics as $t) {
             $p = $performances->get($t->id);
             if ($p && $p->classificacao === 'revisao_leve') {
-                $trilha->push(['topic' => $t, 'nivel' => 'revisao', 'perf' => $p]);
+                $revisao[] = ['topic' => $t, 'nivel' => 'revisao', 'perf' => $p];
             }
         }
+        usort($revisao, fn($a, $b) =>
+            ($a['perf']->percentual_acertos ?? 0) <=> ($b['perf']->percentual_acertos ?? 0)
+        );
+        foreach ($revisao as $item) $trilha->push($item);
+
         // 3º — Sem performance (nunca fez quiz neste tópico)
         foreach ($allTopics as $t) {
             if (!$performances->has($t->id)) {
@@ -429,5 +439,116 @@ PROMPT;
             ->pluck('total', 'topic_id');
 
         return view('student.trilha', compact('trilha', 'recsCount', 'performances'));
+    }
+
+    // ─── Gerar Trilha de Estudo via IA ───────────────────────────
+
+    public function gerarTrilha(Request $request, Topic $topic)
+    {
+        set_time_limit(120);
+
+        $user = Auth::user();
+
+        $performance = TopicPerformance::where('user_id', $user->id)
+            ->where('topic_id', $topic->id)
+            ->first();
+
+        $pct    = $performance ? round($performance->percentual_acertos ?? 0) : null;
+        $classe = $performance->classificacao ?? 'sem_historico';
+
+        $contextDesempenho = $pct !== null
+            ? "O estudante já realizou quizzes sobre este tópico e obteve {$pct}% de acertos. Classificação atual: {$classe}."
+            : "O estudante ainda não realizou nenhum quiz sobre este tópico.";
+
+        $systemPrompt = <<<PROMPT
+Você é um assistente educacional especializado em criar trilhas de estudo personalizadas para estudantes de tecnologia.
+
+Dado um tópico de estudo, você deve gerar uma trilha de aprendizado estruturada com passos claros e progressivos.
+
+Regras:
+- Retorne APENAS um JSON válido, sem markdown, sem blocos de código, sem texto adicional.
+- O JSON deve ter exatamente este formato:
+{
+  "passos": [
+    {
+      "ordem": 1,
+      "titulo": "Título do passo",
+      "descricao": "Descrição clara do que estudar neste passo",
+      "duracao_estimada": "2 horas",
+      "tipo": "teoria"
+    }
+  ]
+}
+- Tipos válidos: "teoria", "pratica", "revisao", "projeto"
+- Gere entre 4 e 7 passos progressivos
+- Adapte a trilha ao nível do estudante com base no desempenho
+- Responda SEMPRE em português brasileiro
+PROMPT;
+
+        $userMessage = "Crie uma trilha de estudo para o tópico: \"{$topic->nome}\". {$contextDesempenho}";
+
+        $apiKey = env('GOOGLE_AI_KEY');
+
+        if (empty($apiKey)) {
+            return response()->json(['error' => 'API de IA não configurada.'], 500);
+        }
+
+        $model    = 'gemini-3.5-flash-lite';
+        $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
+        $caBundle = 'C:/tools/php85/extras/ssl/cacert.pem';
+
+        if (!is_file($caBundle)) {
+            return response()->json(['error' => 'Certificado SSL não encontrado.'], 500);
+        }
+
+        $payload = [
+            'systemInstruction' => [
+                'parts' => [['text' => $systemPrompt]],
+            ],
+            'contents' => [
+                ['role' => 'user', 'parts' => [['text' => $userMessage]]],
+            ],
+            'generationConfig' => [
+                'maxOutputTokens' => 1500,
+                'temperature'     => 0.5,
+            ],
+        ];
+
+        try {
+            $response = Http::connectTimeout(15)
+                ->timeout(90)
+                ->withOptions([
+                    'verify' => $caBundle,
+                    'curl'   => [CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4],
+                ])
+                ->withHeaders([
+                    'x-goog-api-key' => $apiKey,
+                    'Content-Type'   => 'application/json',
+                ])
+                ->post($endpoint, $payload);
+
+            if ($response->successful()) {
+                $text = $response->json('candidates.0.content.parts.0.text') ?? '';
+                // Limpar possíveis marcadores de código que a IA possa ter incluído
+                $text = preg_replace('/```json\s*/i', '', $text);
+                $text = preg_replace('/```\s*/i', '', $text);
+                $text = trim($text);
+
+                $data = json_decode($text, true);
+
+                if (json_last_error() !== JSON_ERROR_NONE || !isset($data['passos'])) {
+                    return response()->json(['error' => 'Resposta inválida da IA. Tente novamente.'], 500);
+                }
+
+                return response()->json(['passos' => $data['passos']]);
+            } else {
+                $errorMsg = $response->json('error.message') ?? 'Erro desconhecido.';
+                Log::error('Erro API Gemini (trilha)', ['status' => $response->status(), 'error' => $errorMsg]);
+                return response()->json(['error' => "Erro na IA: {$errorMsg}"], 500);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Erro ao gerar trilha', ['message' => $e->getMessage()]);
+            return response()->json(['error' => 'Falha ao conectar com a IA. Tente novamente.'], 500);
+        }
     }
 }
