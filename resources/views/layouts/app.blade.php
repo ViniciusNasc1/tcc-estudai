@@ -144,6 +144,44 @@
 
         <!-- Main Body Content -->
         <main class="main-content">
+
+            {{-- Mensagens flash de sucesso / erro --}}
+            @if(session('success'))
+                <div class="alert alert-success" style="
+                    background: #d1fae5;
+                    border: 1px solid #6ee7b7;
+                    color: #065f46;
+                    border-radius: 8px;
+                    padding: 0.85rem 1.25rem;
+                    margin: 1rem 0;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.6rem;
+                    font-weight: 500;
+                ">
+                    <i class="fa-solid fa-circle-check"></i>
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-error" style="
+                    background: #fee2e2;
+                    border: 1px solid #fca5a5;
+                    color: #991b1b;
+                    border-radius: 8px;
+                    padding: 0.85rem 1.25rem;
+                    margin: 1rem 0;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.6rem;
+                    font-weight: 500;
+                ">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    {{ session('error') }}
+                </div>
+            @endif
+
             @yield('content')
         </main>
     </div>
